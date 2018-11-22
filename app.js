@@ -68,11 +68,31 @@ class News extends Component {
             value: 'coconut'
         }
 
+        this.handleChange = this.handleChange.bind(this);
+        this.handleSubmit = this.handleSubmit.bind(this);
+        this.onVote  = this.onVote.bind(this);
+
     }
     componentDidMount(){
-       this.getNews()
-       this.handleChange = this.handleChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
+       this.getNews();
+       
+    }
+    onVote (type,title) {
+        switch(type){
+            case "add":
+            const news = [...this.state.news];
+            const indexx = this.state.news.findIndex(item => item.title === title);
+            news[indexx].like = this.state.news[indexx].like + 1;
+            this.setState({news});
+            
+            break;
+            case "min":
+            const newss = [...this.state.news];
+            const indexxx = this.state.news.findIndex(item => item.title === title);
+            newss[indexxx].like = this.state.news[indexxx].like + 1;
+            this.setState({news})
+        }
+        
     }
 
     getNews(searchTerm = 'Iraq') {
@@ -81,29 +101,40 @@ class News extends Component {
                 return response.json()
             })
             .then((data)=>{
-                this.setState({
-                    news: data.articles
-
+                const news=[];
+                data.articles.map((item,index) => {
+                    item.like = 0;
+                    item.id = index;
+                    news.push(item);
                 });
+                this.setState({news});
+                console.log(news);
+                
             })
     }
 
     getNewsByDate(searchTerm = 'Iraq') {
         fetch(`https://newsapi.org/v2/everything?q=${searchTerm}&sortBy=publishedAt&apiKey=6abfc2fbdbaf41f4bca92b5c025b68e8`)
             .then((response)=>{
-                return response.json()
+                return response.json();
             })
             .then((data)=>{
-                this.setState({
-                    news: data.articles
+                const news=[];
+                data.articles.map((item,index) => {
+                    item.like = 0;
+                    item.id = index;
+                    news.push(item);
                 });
+                this.setState({news});
+                console.log(news);
+                
             })
     }
 
     onInputChange(event){
         this.setState({
             searchValue: event.target.value
-        })
+        });
     }
 
     onKeyUp(event){
@@ -159,6 +190,10 @@ class News extends Component {
                                               title={ item.title }
                                               description={ item.description }
                                               publishedAt={ item.publishedAt }
+                                              like={item.like}
+                                              id={item.id}
+                                              onVote={this.onVote}
+
                             />
                         })
                     }
@@ -178,20 +213,9 @@ class ChildNews extends Component {
         }
     }
 
-    onVote(type){
-        this.setState(prevState => {
-            if(prevState.vote === 0){
-                return {vote: type == 'add' ? prevState.vote + 1: prevState.vote - 0}
-            }
-            else{
-                return {vote: type == 'add' ? prevState.vote + 1: prevState.vote - 1}
-            }
-            localStorage.setItem("db", JSON.stringify(prevState.vote));
-        });
-    }
 
     render(){
-        const {urlToImage, title, description, publishedAt} = this.props;
+        const {urlToImage, title, description, publishedAt,id,onVote,like} = this.props;
         const { vote } = this.state;
 
         return (
@@ -204,10 +228,10 @@ class ChildNews extends Component {
                 </NewsText>
                 <Voter>
                     <img height="13px" src={require('./assets/upvote.svg')} alt=""
-                         onClick={ this.onVote.bind(this, 'add') } />
-                    <div value={ vote }>{ vote }</div>
+                         onClick={ () =>onVote('add',title) } />
+                    <div value={ vote }>{ like }</div>
                     <img height="13px" src={require('./assets/downvote.svg')} alt=""
-                         onClick={ this.onVote.bind(this, 'min') } />
+                         onClick={() => onVote('min',title) } />
                 </Voter>
             </NewsItem>
         )
