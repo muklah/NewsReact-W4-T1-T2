@@ -65,24 +65,29 @@ class News extends Component {
         this.state = {
             news: [],
             searchValue: '',
-            value: 'coconut'
+            value: 'coconut',
+            size: '5'
         }
 
         this.handleChange = this.handleChange.bind(this);
-        this.handleSubmit = this.handleSubmit.bind(this);
+        this.handleSize = this.handleSize.bind(this);
         this.onVote  = this.onVote.bind(this);
 
     }
     componentDidMount(){
+        const data = JSON.parse(localStorage.getItem('votes'));
+
        this.getNews();
        
     }
-    onVote (type,title) {
+    onVote (type, title) {
         switch(type){
             case "add":
             const news = [...this.state.news];
             const indexx = this.state.news.findIndex(item => item.title === title);
             news[indexx].like = this.state.news[indexx].like + 1;
+            localStorage.setItem('votes', JSON.stringify(news[indexx].like));
+            console.log(news[indexx].like)
             this.setState({news});
             
             break;
@@ -108,7 +113,6 @@ class News extends Component {
                     news.push(item);
                 });
                 this.setState({news});
-                console.log(news);
                 
             })
     }
@@ -129,6 +133,32 @@ class News extends Component {
                 console.log(news);
                 
             })
+    }
+
+    getNewsByTitle(searchTerm = 'Iraq') {
+        const news = [...this.state.news];
+        const sorted = news.sort(function(a,b){
+            return a.title > b.title;});
+            
+  console.log(sorted);
+  this.setState({
+    news: sorted
+})
+        // fetch(`https://newsapi.org/v2/everything?q=${searchTerm}&sortBy=title&apiKey=6abfc2fbdbaf41f4bca92b5c025b68e8`)
+        //     .then((response)=>{
+        //         return response.json();
+        //     })
+        //     .then((data)=>{
+        //         const news=[];
+        //         data.articles.map((item,index) => {
+        //             item.like = 0;
+        //             item.id = index;
+        //             news.push(item);
+        //         });
+        //         this.setState({news});
+        //         console.log(news);
+                
+        //     })
     }
 
     onInputChange(event){
@@ -153,16 +183,61 @@ class News extends Component {
         this.setState({value: event.target.value});
         console.log({value: event.target.value});
         if(event.target.value === 'default'){
-            this.getNews()
+            let searchValue = location.pathname.substr(1)
+            if(searchValue){
+                this.getNews(searchValue)
+            }else{
+                this.getNews()
+            }
         }
         if(event.target.value === 'bydate'){
-            this.getNewsByDate()
+            let searchValue = location.pathname.substr(1)
+            if(searchValue){
+                this.getNewsByDate(searchValue)
+            }else{
+                this.getNewsByDate()
+            }
+        }
+        if(event.target.value === 'bytitle'){
+            this.getNewsByTitle()
+            // let searchValue = location.pathname.substr(1)
+            // if(searchValue){
+            //     this.getNewsByTitle(searchValue)
+            // }else{
+            //     this.getNewsByTitle()
+            // }
         }
       }
-    
-      handleSubmit(event) {
-        alert('Your favorite flavor is: ' + this.state.value);
-        event.preventDefault();
+
+      handleSize(event) {
+          
+        this.setState({size: event.target.value});
+        if(event.target.value === '5'){
+            const news = [...this.state.news];
+                var slice = news.slice(0, 5)
+                this.setState({
+                    news: slice
+                });
+
+        }
+        if(event.target.value === '10'){
+            const news = [...this.state.news];
+            var slice = news.slice(0, 10)
+                this.setState({
+                    news: slice
+                });
+           }
+            if(event.target.value === '15'){
+                const news = [...this.state.news];
+                var slice = news.slice(0, 15)
+                this.setState({
+                    news: slice
+                });
+        }
+
+        
+
+
       }
 
     render() {
@@ -177,12 +252,17 @@ class News extends Component {
                 </Navigation>
                 <NewsContainer>
                     
-            <select value={this.state.value} onChange={this.handleChange}>
+            <select name="sort" value={this.state.value} onChange={this.handleChange}>
             <option value="default">Default News</option>
             <option value="bydate">News By Date</option>
             <option value="bytitle">News By Title</option>
           </select>
-          <input type="submit" value="Submit" />
+
+          <select name="page" value={this.state.size} onChange={this.handleSize}>
+            <option value="5">5 Articles</option>
+            <option value="10">10 Articles</option>
+            <option value="15">15 Articles</option>
+          </select>
                     {
                         this.state.news.map((item, i)=>{
                             return <ChildNews key={i}
