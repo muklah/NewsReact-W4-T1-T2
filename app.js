@@ -100,8 +100,8 @@ class News extends Component {
         
     }
 
-    getNews(searchTerm = 'Iraq') {
-        fetch(`https://newsapi.org/v2/everything?q=${searchTerm}&apiKey=6abfc2fbdbaf41f4bca92b5c025b68e8`)
+    getNews(searchTerm = 'Iraq', dateTerm = '', sizeTerm = '') {
+        fetch(`https://newsapi.org/v2/everything?q=${searchTerm}&sortBy=${dateTerm}&apiKey=6abfc2fbdbaf41f4bca92b5c025b68e8`)
             .then((response)=>{
                 return response.json()
             })
@@ -112,53 +112,41 @@ class News extends Component {
                     item.id = index;
                     news.push(item);
                 });
-                this.setState({news});
+                if(sizeTerm === '5'){
+                var slice = news.slice(0, 5)
+                this.setState({news: slice});
+                console.log(slice);
                 
+                }
+                if(sizeTerm === '10'){
+                    var slice = news.slice(0, 10)
+                    this.setState({news: slice});
+                    console.log(slice);
+                    }
+                if(sizeTerm === '15'){
+                        var slice = news.slice(0, 15)
+                        this.setState({news: slice});
+                        console.log(slice);
+                        }
+                if(sizeTerm === ''){
+                this.setState({news: news});
+                }
             })
     }
 
-    getNewsByDate(searchTerm = 'Iraq') {
-        fetch(`https://newsapi.org/v2/everything?q=${searchTerm}&sortBy=publishedAt&apiKey=6abfc2fbdbaf41f4bca92b5c025b68e8`)
-            .then((response)=>{
-                return response.json();
-            })
-            .then((data)=>{
-                const news=[];
-                data.articles.map((item,index) => {
-                    item.like = 0;
-                    item.id = index;
-                    news.push(item);
-                });
-                this.setState({news});
-                console.log(news);
-                
-            })
-    }
-
-    getNewsByTitle(searchTerm = 'Iraq') {
+    getNewsByTitle() {
         const news = [...this.state.news];
         const sorted = news.sort(function(a,b){
-            return a.title > b.title;});
-            
-  console.log(sorted);
-  this.setState({
-    news: sorted
-})
-        // fetch(`https://newsapi.org/v2/everything?q=${searchTerm}&sortBy=title&apiKey=6abfc2fbdbaf41f4bca92b5c025b68e8`)
-        //     .then((response)=>{
-        //         return response.json();
-        //     })
-        //     .then((data)=>{
-        //         const news=[];
-        //         data.articles.map((item,index) => {
-        //             item.like = 0;
-        //             item.id = index;
-        //             news.push(item);
-        //         });
-        //         this.setState({news});
-        //         console.log(news);
-                
-        //     })
+            if (a.title < b.title)
+                return -1;
+            if (a.title > b.title)
+                return 1;
+            return 0;
+        });
+        console.log(sorted);
+        this.setState({
+            news: sorted
+        })
     }
 
     onInputChange(event){
@@ -192,20 +180,15 @@ class News extends Component {
         }
         if(event.target.value === 'bydate'){
             let searchValue = location.pathname.substr(1)
+            let dateValue = 'publishedAt'
             if(searchValue){
-                this.getNewsByDate(searchValue)
+                this.getNews(searchValue, dateValue)
             }else{
-                this.getNewsByDate()
+                this.getNews('Iraq', dateValue)
             }
         }
         if(event.target.value === 'bytitle'){
             this.getNewsByTitle()
-            // let searchValue = location.pathname.substr(1)
-            // if(searchValue){
-            //     this.getNewsByTitle(searchValue)
-            // }else{
-            //     this.getNewsByTitle()
-            // }
         }
       }
 
@@ -213,30 +196,31 @@ class News extends Component {
           
         this.setState({size: event.target.value});
         if(event.target.value === '5'){
-            const news = [...this.state.news];
-                var slice = news.slice(0, 5)
-                this.setState({
-                    news: slice
-                });
-
+            let searchValue = location.pathname.substr(1)            
+            if(searchValue){
+                this.getNews(searchValue, '', '5')
+            }else{
+                this.getNews('Iraq', '', '5')
+            }
         }
+
         if(event.target.value === '10'){
-            const news = [...this.state.news];
-            var slice = news.slice(0, 10)
-                this.setState({
-                    news: slice
-                });
+            let searchValue = location.pathname.substr(1)            
+            if(searchValue){
+                this.getNews(searchValue, '', '10')
+            }else{
+                this.getNews('Iraq', '', '10')
+            }
            }
-            if(event.target.value === '15'){
-                const news = [...this.state.news];
-                var slice = news.slice(0, 15)
-                this.setState({
-                    news: slice
-                });
+
+        if(event.target.value === '15'){
+            let searchValue = location.pathname.substr(1)            
+            if(searchValue){
+                this.getNews(searchValue, '', '15')
+            }else{
+                this.getNews('Iraq', '', '15')
+            }
         }
-
-        
-
 
       }
 
@@ -259,6 +243,7 @@ class News extends Component {
           </select>
 
           <select name="page" value={this.state.size} onChange={this.handleSize}>
+            <option value="1" >Number of Articles</option>
             <option value="5">5 Articles</option>
             <option value="10">10 Articles</option>
             <option value="15">15 Articles</option>
