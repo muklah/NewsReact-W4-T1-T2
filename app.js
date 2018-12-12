@@ -220,8 +220,6 @@ class News extends Component {
             firebase.firestore().collection('readers').add({
               email: this.state.email
             })
-
-            ctx.actions.toggle()
     }
 
     handleChange(event) {
