@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom'
 import styled from 'styled-components'
+import firebase, { database } from './firebase';
 
-let SearchBox = styled.input `
+let SearchBox = styled.input`
   border-radius: 20px;
   background-color: #000;
   color: #fff;
@@ -12,7 +13,8 @@ let SearchBox = styled.input `
   outline: none;
   padding: 0 10px;
 `
-let Navigation = styled.header `
+
+let Navigation = styled.header`
   display: flex;
   padding: 0px 10%;
   align-items: center;
@@ -21,8 +23,30 @@ let Navigation = styled.header `
   height: 100px;
 `
 
+let SubscribeBox = styled.input`
+  border-radius: 20px;
+  background-color: #000;
+  color: #fff;
+  font-size: 1.2rem;
+  border: 0px;
+  height: 40px;
+  outline: none;
+  padding: 0 10px;
+`
+
+let Button = styled.button`
+  border-radius: 20px;
+  background-color: #000;
+  color: #fff;
+  font-size: 1.2rem;
+  border: 0px;
+  height: 40px;
+  outline: none;
+  padding: 0 10px;
+`
+
 let NewsContainer = styled.main`
-background-color: rgba(245, 246, 250, 0.8);
+  background-color: rgba(245, 246, 250, 0.8);
   padding: 20px 10%;
 `
 
@@ -59,84 +83,102 @@ let Voter = styled.div`
 
 class News extends Component {
 
-    constructor(){
+    constructor() {
         super()
 
         this.state = {
             news: [],
             searchValue: '',
+            subscribeValue: '',
             value: 'coconut',
-            size: '5'
+            size: '20'
         }
 
         this.handleChange = this.handleChange.bind(this);
         this.handleSize = this.handleSize.bind(this);
-        this.onVote  = this.onVote.bind(this);
+        this.onVote = this.onVote.bind(this);
 
     }
-    componentDidMount(){
+    componentDidMount() {
         const data = JSON.parse(localStorage.getItem('votes'));
 
-       this.getNews();
-       
+        this.getNews();
+
     }
-    onVote (type, title) {
-        switch(type){
+    onVote(type, title) {
+        switch (type) {
             case "add":
-            const news = [...this.state.news];
-            const indexx = this.state.news.findIndex(item => item.title === title);
-            news[indexx].like = this.state.news[indexx].like + 1;
-            localStorage.setItem('votes', JSON.stringify(news[indexx].like));
-            console.log(news[indexx].like)
-            this.setState({news});
-            
-            break;
+                const news = [...this.state.news];
+                const indexx = this.state.news.findIndex(item => item.title === title);
+                news[indexx].like = this.state.news[indexx].like + 1;
+                localStorage.setItem('votes', JSON.stringify(news[indexx].like));
+
+                this.setState({ news });
+                const votedds = news.filter(item => item.like > 0);
+                const voteds = votedds.map(item => {
+                    return { title: item.title, like: item.like }
+                });
+                database.ref('voting').set(voteds);
+                break;
             case "min":
-            const newss = [...this.state.news];
-            const indexxx = this.state.news.findIndex(item => item.title === title);
-            newss[indexxx].like = this.state.news[indexxx].like + 1;
-            this.setState({news})
+                const newss = [...this.state.news];
+                const indexxx = this.state.news.findIndex(item => item.title === title);
+                newss[indexxx].like = this.state.news[indexxx].like + 1;
+                this.setState({ news });
         }
-        
     }
 
     getNews(searchTerm = 'Iraq', dateTerm = '', sizeTerm = '') {
         fetch(`https://newsapi.org/v2/everything?q=${searchTerm}&sortBy=${dateTerm}&apiKey=6abfc2fbdbaf41f4bca92b5c025b68e8`)
-            .then((response)=>{
+            .then((response) => {
                 return response.json()
             })
-            .then((data)=>{
-                const news=[];
-                data.articles.map((item,index) => {
+            .then((data) => {
+                const news = [];
+                data.articles.map((item, index) => {
                     item.like = 0;
                     item.id = index;
                     news.push(item);
                 });
-                if(sizeTerm === '5'){
-                var slice = news.slice(0, 5)
-                this.setState({news: slice});
-                console.log(slice);
-                
-                }
-                if(sizeTerm === '10'){
-                    var slice = news.slice(0, 10)
-                    this.setState({news: slice});
+                if (sizeTerm === '5') {
+                    var slice = news.slice(0, 5)
+                    this.setState({ news: slice });
                     console.log(slice);
-                    }
-                if(sizeTerm === '15'){
-                        var slice = news.slice(0, 15)
-                        this.setState({news: slice});
-                        console.log(slice);
-                        }
-                if(sizeTerm === ''){
-                this.setState({news: news});
+
+                }
+                if (sizeTerm === '10') {
+                    var slice = news.slice(0, 10)
+                    this.setState({ news: slice });
+                    console.log(slice);
+                }
+                if (sizeTerm === '15') {
+                    var slice = news.slice(0, 15)
+                    this.setState({ news: slice });
+                    console.log(slice);
+                }
+                if (sizeTerm === '') {
+                    this.setState({ news: news });
                 }
             })
+        const ref = database.ref().child('voting');
+        let news = [];
+        ref.on('value', snap => {
+            const voted = snap.val();
+            voted.map(votedItem => {
+                news = this.state.news.forEach(newsItem => {
+                    if (newsItem.title == votedItem.title) {
+                        newsItem.like = votedItem.like;
+                    }
+                });
+            });
+
+        });
+        this.setState({ news });
     }
 
     getNewsByTitle() {
         const news = [...this.state.news];
-        const sorted = news.sort(function(a,b){
+        const sorted = news.sort(function (a, b) {
             if (a.title < b.title)
                 return -1;
             if (a.title > b.title)
@@ -149,14 +191,20 @@ class News extends Component {
         })
     }
 
-    onInputChange(event){
+    onSearchInputChange(event) {
         this.setState({
             searchValue: event.target.value
         });
     }
 
-    onKeyUp(event){
-        if(event.key == 'Enter'){
+    onSubscribeInputChange(event) {
+        this.setState({
+            subscribeValue: event.target.value
+        });
+    }
+
+    onKeyUp(event) {
+        if (event.key == 'Enter') {
             history.pushState({
                 searchterm: this.state.searchValue
             }, "", this.state.searchValue)
@@ -166,98 +214,111 @@ class News extends Component {
             })
         }
     }
+    onSubscribe(event) {
+        alert('hello')
+    }
 
     handleChange(event) {
-        this.setState({value: event.target.value});
-        console.log({value: event.target.value});
-        if(event.target.value === 'default'){
+        this.setState({ value: event.target.value });
+        console.log({ value: event.target.value });
+        if (event.target.value === 'default') {
             let searchValue = location.pathname.substr(1)
-            if(searchValue){
+            if (searchValue) {
                 this.getNews(searchValue)
-            }else{
+            } else {
                 this.getNews()
             }
         }
-        if(event.target.value === 'bydate'){
+        if (event.target.value === 'bydate') {
             let searchValue = location.pathname.substr(1)
             let dateValue = 'publishedAt'
-            if(searchValue){
+            if (searchValue) {
                 this.getNews(searchValue, dateValue)
-            }else{
+            } else {
                 this.getNews('Iraq', dateValue)
             }
         }
-        if(event.target.value === 'bytitle'){
+        if (event.target.value === 'bytitle') {
             this.getNewsByTitle()
         }
-      }
+    }
 
-      handleSize(event) {
-          
-        this.setState({size: event.target.value});
-        if(event.target.value === '5'){
-            let searchValue = location.pathname.substr(1)            
-            if(searchValue){
+    handleSize(event) {
+
+        this.setState({ size: event.target.value });
+        if (event.target.value === '5') {
+            let searchValue = location.pathname.substr(1)
+            if (searchValue) {
                 this.getNews(searchValue, '', '5')
-            }else{
+            } else {
                 this.getNews('Iraq', '', '5')
             }
         }
 
-        if(event.target.value === '10'){
-            let searchValue = location.pathname.substr(1)            
-            if(searchValue){
+        if (event.target.value === '10') {
+            let searchValue = location.pathname.substr(1)
+            if (searchValue) {
                 this.getNews(searchValue, '', '10')
-            }else{
+            } else {
                 this.getNews('Iraq', '', '10')
             }
-           }
+        }
 
-        if(event.target.value === '15'){
-            let searchValue = location.pathname.substr(1)            
-            if(searchValue){
+        if (event.target.value === '15') {
+            let searchValue = location.pathname.substr(1)
+            if (searchValue) {
                 this.getNews(searchValue, '', '15')
-            }else{
+            } else {
                 this.getNews('Iraq', '', '15')
             }
         }
 
-      }
+    }
 
     render() {
         return (
             <React.Fragment>
                 <Navigation>
-                    <img width="150px;" src={require('./assets/logo.svg')}/>
+                    <img width="150px;" src={require('./assets/logo.svg')} />
                     <SearchBox
-                        onChange={this.onInputChange.bind(this)}
+                        onChange={this.onSearchInputChange.bind(this)}
                         onKeyUp={this.onKeyUp.bind(this)}
-                        value={this.state.searchValue} placeholder="search term"/>
+                        value={this.state.searchValue} placeholder="search term" />
                 </Navigation>
                 <NewsContainer>
-                    
-            <select name="sort" value={this.state.value} onChange={this.handleChange}>
-            <option value="default">Default News</option>
-            <option value="bydate">News By Date</option>
-            <option value="bytitle">News By Title</option>
-          </select>
 
-          <select name="page" value={this.state.size} onChange={this.handleSize}>
-            <option value="1" >Number of Articles</option>
-            <option value="5">5 Articles</option>
-            <option value="10">10 Articles</option>
-            <option value="15">15 Articles</option>
-          </select>
+                    <select name="sort" value={this.state.value} onChange={this.handleChange}>
+                        <option value="default">Default News</option>
+                        <option value="bydate">News By Date</option>
+                        <option value="bytitle">News By Title</option>
+                    </select>
+
+                    <select name="page" value={this.state.size} onChange={this.handleSize}>
+                        <option value="1" >Number of Articles</option>
+                        <option value="5">5 Articles</option>
+                        <option value="10">10 Articles</option>
+                        <option value="15">15 Articles</option>
+                    </select>
+
+                    <SubscribeBox
+                        onChange={this.onSubscribeInputChange.bind(this)}
+                        value={this.state.subscribeValue} placeholder="email address" />
+
+                    <Button onClick={this.onSubscribe.bind(this)}>
+                        Subscribe
+                    </Button>
+
                     {
-                        this.state.news.map((item, i)=>{
+                        this.state.news &&
+                        this.state.news.map((item, i) => {
                             return <ChildNews key={i}
-                                              urlToImage={ item.urlToImage }
-                                              title={ item.title }
-                                              description={ item.description }
-                                              publishedAt={ item.publishedAt }
-                                              like={item.like}
-                                              id={item.id}
-                                              onVote={this.onVote}
+                                urlToImage={item.urlToImage}
+                                title={item.title}
+                                description={item.description}
+                                publishedAt={item.publishedAt}
+                                like={item.like}
+                                id={item.id}
+                                onVote={this.onVote}
 
                             />
                         })
@@ -270,7 +331,7 @@ class News extends Component {
 
 
 class ChildNews extends Component {
-    constructor(){
+    constructor() {
         super()
 
         this.state = {
@@ -279,8 +340,8 @@ class ChildNews extends Component {
     }
 
 
-    render(){
-        const {urlToImage, title, description, publishedAt,id,onVote,like} = this.props;
+    render() {
+        const { urlToImage, title, description, publishedAt, id, onVote, like } = this.props;
         const { vote } = this.state;
 
         return (
@@ -293,10 +354,10 @@ class ChildNews extends Component {
                 </NewsText>
                 <Voter>
                     <img height="13px" src={require('./assets/upvote.svg')} alt=""
-                         onClick={ () =>onVote('add',title) } />
-                    <div value={ vote }>{ like }</div>
+                        onClick={() => onVote('add', title)} />
+                    <div value={vote}>{like}</div>
                     <img height="13px" src={require('./assets/downvote.svg')} alt=""
-                         onClick={() => onVote('min',title) } />
+                        onClick={() => onVote('min', title)} />
                 </Voter>
             </NewsItem>
         )
@@ -306,8 +367,8 @@ class ChildNews extends Component {
 
 function App() {
     return (
-        <div><News/></div>
+        <div><News /></div>
     )
 }
 
-ReactDOM.render(<App/>, document.getElementById('root'))
+ReactDOM.render(<App />, document.getElementById('root'))
