@@ -23,6 +23,27 @@ let Navigation = styled.header`
   height: 100px;
 `
 
+let BarContainer = styled.div`
+  display:flex;
+  justify-content: space-between;
+`
+
+let SortContainer = styled.main`
+  display:flex;
+`
+
+let SubscribeContainer = styled.main`
+  display:flex;
+`
+
+let SortSelect = styled.select`
+  margin: 5px;
+`
+
+let SizeSelect = styled.select`
+  margin: 5px;
+`
+
 let SubscribeBox = styled.input`
   border-radius: 20px;
   background-color: #000;
@@ -31,7 +52,8 @@ let SubscribeBox = styled.input`
   border: 0px;
   height: 40px;
   outline: none;
-  padding: 0 10px;
+  padding: 0 15px;
+  margin: 5px;
 `
 
 let Button = styled.button`
@@ -42,7 +64,8 @@ let Button = styled.button`
   border: 0px;
   height: 40px;
   outline: none;
-  padding: 0 10px;
+  padding: 0 15px;
+  margin: 5px;
 `
 
 let NewsContainer = styled.main`
@@ -112,7 +135,7 @@ class News extends Component {
                 const news = [...this.state.news];
                 const indexx = this.state.news.findIndex(item => item.title === title);
                 news[indexx].like = this.state.news[indexx].like + 1;
-                localStorage.setItem('votes', JSON.stringify(news[indexx].like));
+                // localStorage.setItem('votes', JSON.stringify(news[indexx].like));
 
                 this.setState({ news });
                 const votedds = news.filter(item => item.like > 0);
@@ -124,7 +147,7 @@ class News extends Component {
             case "min":
                 const newss = [...this.state.news];
                 const indexxx = this.state.news.findIndex(item => item.title === title);
-                newss[indexxx].like = this.state.news[indexxx].like + 1;
+                newss[indexxx].like = this.state.news[indexxx].like - 1;
                 this.setState({ news });
         }
     }
@@ -216,9 +239,27 @@ class News extends Component {
         }
     }
     onSubscribe(event) {
-        alert('hello')
-            firebase.firestore().collection('readers').add({
-              email: this.state.email
+        const data = [];
+        firebase.firestore().collection('readers')
+            .where("email", "==", this.state.subscribeValue)
+            .get()
+            .then((resultSnapShot) => {
+
+                if (resultSnapShot.size == 0) {
+
+                    localStorage.setItem('email', this.state.subscribeValue);
+                    const data = localStorage.getItem('email');
+                    console.log(data);
+
+                    firebase.firestore().collection('readers').add({
+                        email: this.state.subscribeValue
+                    })
+
+                    alert('You have been successfully subscribed')
+
+                } else {
+                    alert('You allreaady subscribed before')
+                }
             })
     }
 
@@ -291,26 +332,32 @@ class News extends Component {
                 </Navigation>
                 <NewsContainer>
 
-                    <select name="sort" value={this.state.value} onChange={this.handleChange}>
-                        <option value="default">Default News</option>
-                        <option value="bydate">News By Date</option>
-                        <option value="bytitle">News By Title</option>
-                    </select>
+                    <BarContainer>
+                        <SortContainer>
+                            <SortSelect name="sort" value={this.state.value} onChange={this.handleChange}>
+                                <option value="default">Default News</option>
+                                <option value="bydate">News By Date</option>
+                                <option value="bytitle">News By Title</option>
+                            </SortSelect>
 
-                    <select name="page" value={this.state.size} onChange={this.handleSize}>
-                        <option value="1" >Number of Articles</option>
-                        <option value="5">5 Articles</option>
-                        <option value="10">10 Articles</option>
-                        <option value="15">15 Articles</option>
-                    </select>
+                            <SizeSelect name="page" value={this.state.size} onChange={this.handleSize}>
+                                <option value="1" >Number of Articles</option>
+                                <option value="5">5 Articles</option>
+                                <option value="10">10 Articles</option>
+                                <option value="15">15 Articles</option>
+                            </SizeSelect>
+                        </SortContainer>
 
-                    <SubscribeBox
-                        onChange={this.onSubscribeInputChange.bind(this)}
-                        value={this.state.subscribeValue} placeholder="email address" />
+                        <SubscribeContainer>
+                            <SubscribeBox
+                                onChange={this.onSubscribeInputChange.bind(this)}
+                                value={this.state.subscribeValue} placeholder="email address" />
 
-                    <Button onClick={this.onSubscribe.bind(this)}>
-                        Subscribe
+                            <Button onClick={this.onSubscribe.bind(this)}>
+                                Subscribe
                     </Button>
+                        </SubscribeContainer>
+                    </BarContainer>
 
                     {
                         this.state.news &&
