@@ -91,7 +91,8 @@ class News extends Component {
             searchValue: '',
             subscribeValue: '',
             value: 'coconut',
-            size: '20'
+            size: '20',
+            email: ''
         }
 
         this.handleChange = this.handleChange.bind(this);
@@ -216,6 +217,11 @@ class News extends Component {
     }
     onSubscribe(event) {
         alert('hello')
+            firebase.firestore().collection('readers').add({
+              email: this.state.email
+            })
+
+            ctx.actions.toggle()
     }
 
     handleChange(event) {
